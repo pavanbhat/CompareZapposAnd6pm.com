@@ -1,31 +1,34 @@
 package com.pavan.comparezap;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 
-public class DownloadTasks extends AsyncTask<String, Void, String> {
+public class DownloadTasks extends AsyncTask<String, Void, String[]> {
 
     private String solution = "";
     private String [] finalString = new String[2];
+    private HashMap<Long, Product> zappos;
+    private HashMap<Long, Product> pm;
+
     URL url;
     HttpURLConnection httpURLConnection = null;
 
 
-
-
-
     @Override
-    protected String doInBackground(String... urls) {
+    protected String[] doInBackground(String... urls) {
 
         try {
             url = new URL(urls[0]);
@@ -44,7 +47,8 @@ public class DownloadTasks extends AsyncTask<String, Void, String> {
 
 
             url = new URL(urls[1]);
-            inputStream = httpURLConnection.getInputStream();reader = new InputStreamReader(inputStream);
+            inputStream = httpURLConnection.getInputStream();
+            reader = new InputStreamReader(inputStream);
             data = reader.read();
             while (data != -1){
                 char current = (char) data;
@@ -59,31 +63,48 @@ public class DownloadTasks extends AsyncTask<String, Void, String> {
             e.printStackTrace();
         }
 
-        return solution;
+        return finalString;
     }
 
     @Override
-    protected void onPostExecute(String solution) {
+    protected void onPostExecute(String[] solution) {
         super.onPostExecute(solution);
 
         try {
-            JSONObject jsonObject = new JSONObject(solution);
-            JSONArray productInfo = jsonObject.getJSONArray("results");
+            JSONObject jsonObjectZappos = new JSONObject(solution[0]);
+            JSONArray productInfoZappos = jsonObjectZappos.getJSONArray("results");
+            zappos = new HashMap<Long, Product>();
 
-            StringBuffer zapposBuffer = new StringBuffer();
-            for(int i = 0; i < productInfo.length();i++){
-                JSONObject finObj = productInfo.getJSONObject(i);
-                String price = finObj.getString("price");
+            for(int i = 0; i < productInfoZappos.length();i++){
+                JSONObject finObj = productInfoZappos.getJSONObject(i);
+                String brandName = finObj.getString("brandName");
+                String thumbnailImageUrl = finObj.getString("thumbnailImageUrl");
+                Long productId = Long.parseLong(finObj.getString("productId"));
+                String originalPrice = finObj.getString("originalPrice");
+                int price = Integer.parseInt(finObj.getString("price").substring(1));
+                String percentOff = finObj.getString("percentOff");
+                String productUrl = finObj.getString("productUrl");
                 String productName = finObj.getString("productName");
-                zapposBuffer.append(productName + " : " + price + "\n");
+                zappos.put(productId,new Product(brandName, thumbnailImageUrl, productId, originalPrice, price, percentOff, productUrl, productName));
             }
 
-            StringBuffer pmBuffer = new StringBuffer();
-            for(int i = 0; i < productInfo.length();i++){
-                JSONObject finObj = productInfo.getJSONObject(i);
-                String price = finObj.getString("price");
+
+            JSONObject jsonObjectPm = new JSONObject(solution[1]);
+            JSONArray productInfoPm = jsonObjectPm.getJSONArray("results");
+            pm = new HashMap<Long, Product>();
+
+            for(int i = 0; i < productInfoPm.length();i++){
+                JSONObject finObj = productInfoPm.getJSONObject(i);
+                String brandName = finObj.getString("brandName");
+                String thumbnailImageUrl = finObj.getString("thumbnailImageUrl");
+                Long productId = Long.parseLong(finObj.getString("productId"));
+                String originalPrice = finObj.getString("originalPrice");
+                int price = Integer.parseInt(finObj.getString("price").substring(1));
+                String percentOff = finObj.getString("percentOff");
+                String productUrl = finObj.getString("productUrl");
                 String productName = finObj.getString("productName");
-                pmBuffer.append(productName + " : " + price + "\n");
+                pm.put(productId,new Product(brandName, thumbnailImageUrl, productId, originalPrice, price, percentOff, productUrl, productName));
+
             }
 //            JSONObject productInfo = new JSONObject(jsonObject.getString("results"));
 //            JSONObject forecast = new JSONObject(jsonObject.getString("weather"));
@@ -97,14 +118,15 @@ public class DownloadTasks extends AsyncTask<String, Void, String> {
             Double temperature = Double.parseDouble(productInfo.getString("temp"));
             int temperatureInteger = (int) (temperature - 273.15);
             String placeName = jsonObject.getString("name");*/
-            Log.i("doer",String.valueOf(1) );
-            MainActivity.displayZapposResults.setText(zapposBuffer.toString());
+//            Log.i("doer",String.valueOf(1) );
+            DisplayActivity.zappos = this.zappos;
+            DisplayActivity.pm = this.pm;
+//            MainActivity.displayZapposResults.setText(zapposBuffer.toString());
 //            MainActivity.temp.setText(" "+String.valueOf(temperatureInteger)+" degree celcius");
 //            MainActivity.fc.setText(description);
-        } catch (Exception e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
-
 
 
     }
@@ -114,13 +136,13 @@ class Product{
     String thumbnailImageUrl;
     long productId;
     String originalPrice;
-    String price;
+    int price;
     String percentOff;
     String productUrl;
     String productName;
 
 
-    Product(String brandName, String thumbnailImageUrl, long productId, String originalPrice, String price, String percentOff, String productUrl, String productName){
+    Product(String brandName, String thumbnailImageUrl, long productId, String originalPrice, int price, String percentOff, String productUrl, String productName){
         this.brandName = brandName;
         this.thumbnailImageUrl = thumbnailImageUrl;
         this.productId = productId;

@@ -7,9 +7,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.HashMap;
+
 public class DisplayActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
+    protected static HashMap<Long, Product> zappos;
+    protected static HashMap<Long, Product> pm;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
